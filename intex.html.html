@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuaderno de Física III — Movimiento Oscilatorio</title>
+    <meta name="description" content="Libro digital interactivo de Física III: Movimiento Oscilatorio, Elongación y Fricción con simulaciones.">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']], macros: { sen: '\\operatorname{sen}' } },
+            svg: { fontCache: 'global' },
+            startup: { pageReady: () => MathJax.startup.defaultPageReady() }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --brand-blue: #1a6bff; --brand-green: #00e676; --brand-purple: #7c4dff;
+            --brand-yellow: #ffd600; --brand-orange: #ff6d00; --brand-cyan: #0097a7;
+            --bg-paper: #e8f4f8; --grid-line: rgba(50,150,255,0.18);
+            --margin-line: rgba(255,77,77,0.7); --spine-shadow: rgba(0,0,0,0.15);
+            --font-title: 'Caveat', cursive; --font-body: 'Lora', serif;
+            --leather: #8B5E3C;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #1e1e1e; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; min-height: 100vh;
+            overflow: hidden; font-family: var(--font-body);
+        }
+        header {
+            width: 1350px; display: flex; justify-content: space-between;
+            align-items: center; color: #fff; padding: 8px 0; z-index: 100;
+        }
+        .progress-bar-container {
+            flex-grow: 1; margin: 0 20px; height: 8px;
+            background: #444; border-radius: 4px; overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%; background: linear-gradient(90deg, var(--brand-cyan), var(--brand-blue));
+            width: 0%; transition: width 0.4s ease;
+        }
+        .controls button {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; padding: 7px 14px; margin: 0 4px; border-radius: 5px;
+            cursor: pointer; font-family: var(--font-body); transition: 0.2s; font-size: 13px;
+        }
+        .controls button:hover { background: var(--brand-blue); }
+
+        /* NOTEBOOK */
+        .notebook-wrapper {
+            position: relative; width: 1350px; height: 780px;
+            perspective: 2500px;
+        }
+        .notebook {
+            width: 100%; height: 100%; display: flex; position: relative;
+            transform-style: preserve-3d; border-radius: 10px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            border: 8px solid var(--leather);
+            background: var(--leather);
+        }
+        .spiral-binding {
+            position: absolute; left: 50%; top: 2%; bottom: 2%; width: 36px;
+            transform: translateX(-50%); z-index: 50;
+            background: repeating-linear-gradient(to bottom,
+                transparent, transparent 28px, #333 28px, #666 33px, #333 38px);
+            border-radius: 18px;
+            box-shadow: inset 4px 0 8px rgba(0,0,0,0.5), inset -4px 0 8px rgba(0,0,0,0.5);
+        }
+        .holes { position: absolute; width: 100%; height: 100%; pointer-events: none; z-index: 45; }
+        .hole {
+            width: 13px; height: 13px; background: #2a2a2a; border-radius: 50%;
+            position: absolute; box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
+        }
+        .pages-container { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; }
+
+        .page {
+            position: absolute; width: 50%; height: 100%;
+            background-color: var(--bg-paper);
+            background-image:
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 20px 20px;
+            border-radius: 6px 0 0 6px;
+            padding: 35px 45px; overflow: hidden;
+            backface-visibility: hidden; transform-origin: right center;
+            transition: transform 0.8s cubic-bezier(0.645,0.045,0.355,1);
+            box-shadow: inset -12px 0 18px var(--spine-shadow);
+        }
+        .page.right-side {
+            left: 50%; border-radius: 0 6px 6px 0;
+            transform-origin: left center;
+            box-shadow: inset 12px 0 18px var(--spine-shadow);
+        }
+        .page::before {
+            content: ''; position: absolute; top: 0; bottom: 0;
+            width: 2px; background: var(--margin-line); z-index: 10;
+        }
+        .page:not(.right-side)::before { right: 38px; }
+        .page.right-side::before { left: 50px; }
+
+        .content-area {
+            position: relative; width: 100%; height: 100%; z-index: 20;
+            overflow-y: auto; scrollbar-width: thin;
+            scrollbar-color: rgba(0,0,0,0.2) transparent;
+        }
+        .page:not(.right-side) .content-area { padding-right: 18px; }
+        .page.right-side .content-area { padding-left: 18px; }
+
+        .page.flipped-past-left { transform: rotateY(-180deg); z-index: 1; }
+        .page.flipped-past-right { transform: rotateY(180deg); z-index: 1; }
+        .page.active-left { transform: rotateY(0deg); z-index: 10; }
+        .page.active-right { transform: rotateY(0deg); z-index: 10; }
+        .page.animating { z-index: 20; }
+
+        /* TYPOGRAPHY */
+        h1, h2, h3 { font-family: var(--font-title); color: var(--brand-cyan); margin: 5px 0 15px; }
+        h1 { font-size: 34px; line-height: 1.1; display: inline-block;
+             background: linear-gradient(180deg, transparent 60%, rgba(0,230,118,0.3) 60%); }
+        h2 { font-size: 28px; color: var(--brand-purple); }
+        h3 { font-size: 22px; color: var(--brand-orange); }
+        p { font-size: 16px; line-height: 1.55; color: #333; margin: 8px 0; text-align: justify; }
+
+        .formula-box {
+            background: rgba(0,230,118,0.15); border: 2px solid rgba(0,200,100,0.5);
+            padding: 10px 14px; margin: 12px 0; border-radius: 6px;
+            text-align: center; box-shadow: 2px 2px 6px rgba(0,0,0,0.08);
+        }
+        .highlight-text { background: var(--brand-yellow); padding: 0 4px; border-radius: 3px; }
+        .note-orange {
+            background: rgba(255,109,0,0.12); border-left: 4px solid var(--brand-orange);
+            padding: 8px 10px; margin: 12px 0; font-style: italic; font-size: 14px;
+        }
+        .def-cyan { color: var(--brand-cyan); font-weight: 600; }
+        .def-orange { color: var(--brand-orange); font-weight: 600; }
+        .green-bg { background: rgba(0,230,118,0.3); display: inline-block; padding: 0 6px; border-radius: 3px; }
+        .gray-box {
+            background: rgba(180,180,180,0.3); border-radius: 4px;
+            padding: 10px; margin: 10px 0; font-size: 15px;
+        }
+        ol.hl-list { padding-left: 20px; }
+        ol.hl-list li { margin-bottom: 8px; background: rgba(0,230,118,0.15);
+            padding: 4px 10px; border-radius: 3px; }
+
+        /* SIMULATIONS */
+        .sim-container {
+            width: 100%; background: rgba(255,255,255,0.85); border: 2px solid #ccc;
+            border-radius: 8px; margin: 14px 0; position: relative;
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.08); padding: 5px;
+        }
+        canvas { width: 100%; height: auto; border-radius: 5px; cursor: pointer; }
+        .sim-controls {
+            display: flex; justify-content: center; gap: 8px; margin-top: 6px;
+            font-size: 13px; flex-wrap: wrap; align-items: center;
+        }
+        .sim-controls label { display: flex; align-items: center; gap: 4px; }
+        .sim-controls button { font-size: 12px; padding: 4px 10px; cursor: pointer;
+            border-radius: 4px; border: 1px solid #999; background: #f0f0f0; }
+        .sim-controls button:hover { background: var(--brand-green); }
+        .sim-controls input[type=range] { width: 80px; }
+
+        /* SIDEBAR INDEX */
+        .sidebar-index {
+            position: fixed; left: -280px; top: 18%; bottom: 18%; width: 250px;
+            background: rgba(20,20,20,0.95); color: white; z-index: 200;
+            border-radius: 0 10px 10px 0; box-shadow: 5px 0 20px rgba(0,0,0,0.5);
+            padding: 18px; transition: left 0.3s ease; overflow-y: auto;
+        }
+        .sidebar-index.open { left: 0; }
+        .sidebar-index h3 { color: var(--brand-yellow); font-family: var(--font-body); font-size: 16px; margin-bottom: 10px; }
+        .sidebar-index ul { list-style: none; padding: 0; }
+        .sidebar-index li { padding: 7px 0; border-bottom: 1px solid #444; cursor: pointer;
+            transition: 0.2s; font-size: 13px; }
+        .sidebar-index li:hover { color: var(--brand-green); padding-left: 5px; }
+        .index-toggle {
+            position: fixed; left: 0; top: 50%; transform: translateY(-50%);
+            background: var(--brand-purple); color: white; padding: 12px 8px;
+            cursor: pointer; z-index: 201; border-radius: 0 5px 5px 0;
+            font-weight: bold; font-size: 14px; border: none;
+        }
+        footer {
+            position: fixed; bottom: 0; left: 0; right: 0; height: 32px;
+            background: linear-gradient(90deg, #1e0b50, var(--brand-blue));
+            color: white; display: flex; justify-content: center; align-items: center;
+            z-index: 1000; font-size: 13px;
+        }
+        .page-cover { text-align: center; padding-top: 120px !important; }
+        .page-cover h1 { font-size: 54px; background: none; color: var(--brand-purple);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1); margin-bottom: 40px; }
+        .page-cover h2 { color: #333; font-family: var(--font-body); font-size: 18px; font-weight: 400; }
+        .page-cover .author { margin-top: 60px; font-family: var(--font-title);
+            font-size: 28px; color: var(--brand-blue); }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <button class="index-toggle" onclick="toggleIndex()">☰ Índice</button>
+            <span style="margin-left:50px;font-size:14px;">Cuaderno Digital de Física III</span>
+        </div>
+        <div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div>
+        <div class="controls">
+            <button onclick="prevPage()">◀ Anterior</button>
+            <span id="pageCounter" style="font-size:13px;">1 / 1</span>
+            <button onclick="nextPage()">Siguiente ▶</button>
+            <button onclick="toggleFullscreen()">⛶ Completa</button>
+        </div>
+    </header>
+
+    <div class="sidebar-index" id="sidebar">
+        <h3>📚 Índice de Contenidos</h3>
+        <ul>
+            <li onclick="goTo(1)">📖 Portada</li>
+            <li onclick="goTo(3)">Cap. 1 — Movimiento Oscilatorio</li>
+            <li onclick="goTo(5)">1.1 Oscilación y Período</li>
+            <li onclick="goTo(7)">1.2 Frecuencia y Hertz</li>
+            <li onclick="goTo(9)">1.3 Elongación y Amplitud</li>
+            <li onclick="goTo(11)">1.4 Movimiento Armónico Simple</li>
+            <li onclick="goTo(13)">1.5 Fase y Condiciones del MAS</li>
+            <li onclick="goTo(15)">🎮 Simulación: Péndulo y Resorte</li>
+            <li onclick="goTo(17)">Cap. 2 — Elongación</li>
+            <li onclick="goTo(19)">Cap. 3 — Fricción</li>
+            <li onclick="goTo(21)">🎮 Simulación: Fricción</li>
+            <li onclick="goTo(23)">1.6 Proyección Circular (MAS)</li>
+            <li onclick="goTo(25)">1.7 Derivación de ω y θ</li>
+            <li onclick="goTo(27)">1.8 Derivación de x = A·sen(θ)</li>
+            <li onclick="goTo(29)">1.9 Velocidad en el MAS</li>
+            <li onclick="goTo(31)">1.10 Derivación de v<sub>x</sub></li>
+            <li onclick="goTo(33)">1.11 Aceleración en el MAS</li>
+            <li onclick="goTo(35)">1.12 Relación a-x y max-min</li>
+            <li onclick="goTo(37)">1.13 Velocidad respecto a x</li>
+            <li onclick="goTo(39)">Ejercicios Resueltos</li>
+            <li onclick="goTo(41)">Resumen y Conclusiones</li>
+        </ul>
+    </div>
+
+    <div class="notebook-wrapper">
+        <div class="notebook" id="notebook">
+            <div class="spiral-binding"></div>
+            <div class="holes" id="holesContainer"></div>
+            <div class="pages-container" id="bookPages">
+
+                <!-- PAGE 1: COVER -->
+                <div class="page" data-page="1">
+                    <div class="content-area page-cover">
+                        <h1>Física III</h1>
+                        <h2>Movimiento Oscilatorio, Elongación y Fricción</h2>
+                        <div class="author">Autoras: María Fernanda Mora &amp; Salomé Muñoz</div>
+                        <p style="margin-top:40px;opacity:0.5;font-size:14px;">Universidad Tecnológica de Pereira — 2026-I</p>
+                    </div>
+                </div>
+                <!-- PAGE 2 -->
+                <div class="page" data-page="2">
+                    <div class="content-area">
+                        <h2>Contenido del Cuaderno</h2>
+                        <p>Este cuaderno digital interactivo cubre los fundamentos del movimiento oscilatorio, incluyendo simulaciones y ejemplos resueltos.</p>
+                        <div style="margin-top:20px;">
+                        <p><strong>Capítulo 1:</strong> Movimiento Oscilatorio</p>
+                        <p style="margin-left:15px;">1.1 Oscilación sencilla y completa</p>
+                        <p style="margin-left:15px;">1.2 Período y Frecuencia</p>
+                        <p style="margin-left:15px;">1.3 Elongación y Amplitud</p>
+                        <p style="margin-left:15px;">1.4 Movimiento Armónico Simple</p>
+                        <p style="margin-left:15px;">1.5 Fase y Condiciones del MAS</p>
+                        <p><strong>Capítulo 2:</strong> Elongación — Análisis dinámico</p>
+                        <p><strong>Capítulo 3:</strong> Fricción — Estática y cinética</p>
+                        <p><strong>Simulaciones:</strong> Péndulo, Masa-Resorte, Fricción, x(t)</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- PAGE 3: CAP 1 -->
+                <div class="page" data-page="3">
+                    <div class="content-area">
+                        <h1>Cap. 1 — Movimiento Oscilatorio</h1>
+                        <p>Un móvil está animado de <span class="highlight-text">movimiento vibratorio u oscilatorio</span> cuando se desplaza a uno y otro lado de una posición fija siguiendo una ley cualquiera. El émbolo de una locomotora o el movimiento de un péndulo, por ejemplo, están animados de movimiento oscilatorio.</p>
+                        <div class="sim-container">
+                            <h3 style="text-align:center;margin:5px 0;">🔬 Simulador: Péndulo Simple</h3>
+                            <canvas id="simPendulum" width="500" height="220"></canvas>
+                            <div class="sim-controls">
+                                <label>Longitud: <input type="range" id="pend-L" min="50" max="180" value="120"></label>
+                                <button onclick="pendToggle()">▶ Play/Pausa</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- PAGE 4 -->
+                <div class="page" data-page="4">
+                    <div class="content-area">
+                        <p>En el movimiento oscilatorio, la partícula se desplaza repetidamente entre dos posiciones extremas, pasando por una posición central de equilibrio.</p>
+                        <div class="sim-container">
+                            <h3 style="text-align:center;margin:5px 0;">🔬 Simulador: Sistema Masa-Resorte</h3>
+                            <canvas id="simSpring" width="500" height="180"></canvas>
+                            <div class="sim-controls">
+                                <label>m: <input type="number" id="sp-m" value="100" style="width:50px;"></label>
+                                <label>k: <input type="number" id="sp-k" value="10" style="width:50px;"></label>
+                                <button onclick="spToggle()">▶ Play/Pausa</button>
+                            </div>
+                        </div>
+                        <p>El período del sistema masa-resorte es:</p>
+                        <div class="formula-box">\[ T = 2\pi\sqrt{\frac{m}{k}} \]</div>
+                    </div>
+                </div>
+                <!-- PAGE 5: Oscilación sencilla/completa -->
+                <div class="page" data-page="5">
+                    <div class="content-area">
+                        <h2>1.1 Tipos de Oscilación</h2>
+                        <div style="background:rgba(0,230,118,0.2);border-radius:6px;padding:10px;margin:10px 0;">
+                            <p style="margin:4px 0;"><span class="def-cyan">Oscilación sencilla:</span> Es el movimiento desde un extremo hasta el otro de la trayectoria.</p>
+                            <p style="margin:4px 0;"><span class="def-cyan">Oscilación completa:</span> Es el movimiento desde un extremo hasta el otro de la trayectoria y regreso al punto de partida.</p>
+                        </div>
+                        <p>Un movimiento es <span class="highlight-text">periódico</span> si se repite exactamente cada vez que transcurre un intervalo de tiempo determinado llamado <span class="highlight-text">período</span>.</p>
+                        <p><span class="def-orange">Período:</span> En un movimiento oscilatorio periódico, es el tiempo que tarda una partícula en efectuar una oscilación completa.</p>
+                    </div>
+                </div>
+                <!-- PAGE 6: Período y Frecuencia -->
+                <div class="page" data-page="6">
+                    <div class="content-area">
+                        <p>El período \(T\) se calcula dividiendo el tiempo \(t\) entre el número de oscilaciones \(n\):</p>
+                        <div class="formula-box">\[ T = \frac{t}{n} = \frac{\text{tiempo transcurrido}}{\text{número de oscilaciones completas}} \]</div>
+                        <p><span class="def-cyan">Frecuencia:</span> En un movimiento oscilatorio periódico, la frecuencia es el número de oscilaciones completas efectuadas en la unidad de tiempo:</p>
+                        <div class="formula-box">\[ f = \frac{n}{t} = \frac{\text{número de oscilaciones completas}}{\text{tiempo}} \]</div>
+                        <p>Según el Sistema Internacional de Medidas, la unidad de frecuencia es el <strong>Hertz</strong> (1 Hz = 1/s) en honor al físico alemán Heinrich Rudolf Hertz (1857–1894), quien fue el primero en demostrar la existencia de la radiación electromagnética.</p>
+                    </div>
+                </div>
+                <!-- PAGE 7: Hertz -->
+                <div class="page" data-page="7">
+                    <div class="content-area">
+                        <h2>1.2 Heinrich Rudolf Hertz</h2>
+                        <p>Heinrich Rudolf Hertz (1857–1894) fue un físico alemán que descubrió el efecto fotoeléctrico, la propagación de las ondas electromagnéticas y las formas para producirlas y detectarlas.</p>
+                        <p>Un Hertz corresponde a la frecuencia de una partícula que oscila con movimiento periódico, efectuando una oscilación completa en un segundo:</p>
+                        <p style="text-align:center;font-size:20px;color:var(--brand-cyan);font-weight:600;margin:15px 0;">1 Hz = 1 oscilación completa/segundo</p>
+                        <div class="gray-box">
+                            <p>Otras unidades para indicar la frecuencia son <strong>revoluciones por minuto (rpm)</strong> y <strong>radianes por segundo (rad/s)</strong>.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- PAGE 8: Elongación -->
+                <div class="page" data-page="8">
+                    <div class="content-area">
+                        <h2>1.3 Elongación y Amplitud</h2>
+                        <p><span class="def-cyan">Elongación:</span> En un movimiento oscilatorio, la elongación es la distancia que separa la partícula del centro de la trayectoria.</p>
+                        <p>Usualmente la elongación se representa con las letras: \(x, y, s\).</p>
+                        <svg viewBox="0 0 440 80" style="width:100%;margin:10px 0;">
+                            <line x1="20" y1="40" x2="420" y2="40" stroke="#333" stroke-width="1.5"/>
+                            <circle cx="20" cy="40" r="4" fill="#333"/><text x="15" y="25" font-size="14">M</text>
+                            <circle cx="160" cy="40" r="4" fill="#333"/><text x="155" y="25" font-size="14">O</text>
+                            <circle cx="320" cy="40" r="5" fill="#1a6bff"/><text x="315" y="25" font-size="14">P</text>
+                            <circle cx="420" cy="40" r="4" fill="#333"/><text x="415" y="25" font-size="14">N</text>
+                            <line x1="160" y1="55" x2="320" y2="55" stroke="#ff6d00" stroke-width="2" marker-end="url(#arr)"/>
+                            <text x="220" y="72" font-size="13" fill="#ff6d00">x (elongación)</text>
+                            <text x="60" y="72" font-size="13" fill="#7c4dff">−A</text>
+                            <text x="370" y="72" font-size="13" fill="#7c4dff">A (Amplitud)</text>
+                        </svg>
+                        <p><span class="def-orange">Amplitud:</span> En un movimiento oscilatorio, la amplitud es la distancia desde el centro de la trayectoria hasta un extremo.</p>
+                        <p>La amplitud es el máximo valor de la elongación.</p>
+                    </div>
+                </div>
+                <!-- PAGE 9: MAS definition -->
+                <div class="page" data-page="9">
+                    <div class="content-area">
+                        <h2>1.4 Movimiento Armónico Simple</h2>
+                        <p><span class="def-orange">Movimiento Armónico Simple:</span> De todos los movimientos oscilatorios periódicos el más importante es el movimiento armónico simple (MAS), debido a que, además de ser el movimiento más simple de describir matemáticamente, constituye una aproximación muy cercana de muchas oscilaciones encontradas en la naturaleza.</p>
+                    </div>
+                </div>
+                <!-- PAGE 10: MAS equation -->
+                <div class="page" data-page="10">
+                    <div class="content-area">
+                        <p>Por definición, decimos que una partícula que se mueve a lo largo del eje de las \(X\) tiene un movimiento armónico simple cuando su desplazamiento \(x\) respecto al origen del sistema de coordenadas está dado en función del tiempo por la relación:</p>
+                        <div class="formula-box">\[ x = A \cdot \sen(\omega \cdot t + \alpha) \]</div>
+                        <p>La cantidad \(A\) es la amplitud. El punto \(O\) es la posición de equilibrio, ya que la aceleración y la fuerza en este punto es cero.</p>
+                        <p>La cantidad \(\omega\) se denomina <span class="def-cyan">frecuencia angular</span> y está relacionada con el período del movimiento por medio de la expresión:</p>
+                        <div class="formula-box">\[ \omega = \frac{2\cdot\pi}{T} \]</div>
+                    </div>
+                </div>
+                <!-- PAGE 11: Phase -->
+                <div class="page" data-page="11">
+                    <div class="content-area">
+                        <h2>1.5 Fase del Movimiento</h2>
+                        <p>La cantidad:</p>
+                        <div class="formula-box" style="background:rgba(0,230,118,0.25);">\[ \theta = \omega \cdot t + \alpha \]</div>
+                        <p>se denomina <span class="def-cyan">fase</span>, y por ello \(\alpha\) es la fase inicial (esto es su valor cuando \(t = 0\)).</p>
+                        <p>Aunque hemos definido el movimiento armónico simple en función de una expresión senoidal, puede igualmente expresarse en función de una expresión cosenoidal; el único cambio sería una diferencia inicial de fase de \(\pi/2\).</p>
+                        <p>La distancia \(x\) que separa la partícula del origen del sistema de referencia se denomina <strong>elongación</strong>, y puesto que la función seno o coseno varía entre \(-1\) y \(+1\), la elongación de la partícula varía entre \(x = -A\) y \(x = +A\).</p>
+                    </div>
+                </div>
+                <!-- PAGE 12: Conditions -->
+                <div class="page" data-page="12">
+                    <div class="content-area">
+                        <p>La elongación máxima a partir del origen, \(A\), se define como la <span class="def-cyan">amplitud del movimiento armónico simple</span>. El M.A.S es periódico porque se reproduce exactamente cada vez que transcurre un intervalo de tiempo determinado llamado período.</p>
+                        <p>Podemos afirmar que una partícula está animada de movimiento armónico simple si:</p>
+                        <ol class="hl-list">
+                            <li><strong>Se mueve con movimiento oscilatorio.</strong></li>
+                            <li><strong>El movimiento es periódico.</strong></li>
+                            <li><strong>La amplitud de las oscilaciones es constante.</strong></li>
+                        </ol>
+                        <svg viewBox="0 0 440 80" style="width:100%;margin:10px 0;">
+                            <line x1="20" y1="40" x2="420" y2="40" stroke="#333" stroke-width="1.5"/>
+                            <circle cx="20" cy="40" r="4" fill="#333"/><text x="15" y="25" font-size="14">M</text>
+                            <circle cx="160" cy="40" r="4" fill="#333"/><text x="155" y="25" font-size="14">O</text>
+                            <circle cx="340" cy="40" r="7" fill="#555"/><text x="300" y="20" font-size="12" fill="#ff6d00">x(elongación)</text>
+                            <text x="335" y="25" font-size="14">P</text>
+                            <circle cx="420" cy="40" r="4" fill="#333"/><text x="415" y="25" font-size="14">N</text>
+                            <text x="60" y="72" font-size="13" fill="#7c4dff">−A</text>
+                            <text x="380" y="72" font-size="13" fill="#7c4dff">A</text>
+                        </svg>
+                    </div>
+                </div>
+                <!-- PAGE 13: Velocity intro -->
+                <div class="page" data-page="13">
+                    <div class="content-area">
+                        <h1>Velocidad en el MAS</h1>
+                        <p>La velocidad en el MAS se obtiene derivando la posición respecto al tiempo:</p>
+                        <div class="formula-box">\[ v(t) = \frac{dx}{dt} = A\omega\cos(\omega t + \alpha) \]</div>
+                        <p>La velocidad máxima se alcanza en la posición de equilibrio (\(x = 0\)) y vale:</p>
+                        <div class="formula-box">\[ v_{\text{máx}} = A\omega \]</div>
+                        <p>En los extremos (\(x = \pm A\)), la velocidad es cero.</p>
+                    </div>
+                </div>
+                <!-- PAGE 14: Acceleration -->
+                <div class="page" data-page="14">
+                    <div class="content-area">
+                        <h1>Aceleración en el MAS</h1>
+                        <p>La aceleración se obtiene derivando la velocidad:</p>
+                        <div class="formula-box">\[ a(t) = \frac{dv}{dt} = -A\omega^2\sen(\omega t + \alpha) = -\omega^2 x \]</div>
+                        <p>La aceleración es proporcional y opuesta a la elongación. En la posición de equilibrio la aceleración es cero; en los extremos es máxima:</p>
+                        <div class="formula-box">\[ a_{\text{máx}} = A\omega^2 \]</div>
+                        <div class="note-orange">💡 La relación \(a = -\omega^2 x\) es la ecuación diferencial característica del MAS.</div>
+                    </div>
+                </div>
+                <!-- PAGE 15: Simulation pendulum+spring -->
+                <div class="page" data-page="15">
+                    <div class="content-area">
+                        <h2>🎮 Simulación: Elongación Dinámica</h2>
+                        <div class="sim-container">
+                            <h3 style="text-align:center;margin:5px 0;">Gráfica x(t) en tiempo real</h3>
+                            <canvas id="simElongation" width="500" height="250"></canvas>
+                            <div class="sim-controls">
+                                <label>A: <input type="range" id="elong-A" min="20" max="100" value="60"></label>
+                                <label>ω: <input type="range" id="elong-w" min="1" max="10" value="3"></label>
+                                <label>α: <input type="range" id="elong-a" min="0" max="6" step="0.3" value="0"></label>
+                                <button onclick="elongReset()">↺ Reset</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- PAGE 16 -->
+                <div class="page" data-page="16">
+                    <div class="content-area">
+                        <h2>Resumen Cinemático del MAS</h2>
+                        <ol class="hl-list">
+                            <li><strong>Posición:</strong> \(x(t) = A\sen(\omega t + \alpha)\)</li>
+                            <li><strong>Velocidad:</strong> \(v(t) = A\omega\cos(\omega t + \alpha)\)</li>
+                            <li><strong>Aceleración:</strong> \(a(t) = -A\omega^2\sen(\omega t + \alpha)\)</li>
+                        </ol>
+                        <div class="note-orange">💡 La velocidad está adelantada \(\pi/2\) respecto a la posición, y la aceleración está en oposición de fase con la posición.</div>
+                        <p style="margin-top:15px;">El período del péndulo simple (ángulos pequeños):</p>
+                        <div class="formula-box">\[ T = 2\pi\sqrt{\frac{L}{g}} \]</div>
+                    </div>
+                </div>
+                <!-- PAGE 17: CAP 2 - Elongación -->
+                <div class="page" data-page="17">
+                    <div class="content-area">
+                        <h1>Cap. 2 — Elongación</h1>
+                        <p>La elongación en el MAS describe la posición instantánea de la masa oscilante respecto a la posición de equilibrio, con signo positivo o negativo.</p>
+                        <div class="formula-box">\[ x(t) = A\cos(\omega t + \varphi) \]</div>
+                        <p>En los puntos \(x = +A\) y \(x = -A\) la velocidad es cero y la aceleración alcanza su valor máximo. En el punto de equilibrio \(x = 0\), la velocidad es máxima y la aceleración es cero.</p>
+                        <p>La energía total del sistema se conserva:</p>
+                        <div class="formula-box">\[ E = \frac{1}{2}kA^2 = \frac{1}{2}kx^2 + \frac{1}{2}mv^2 \]</div>
+                    </div>
+                </div>
+                <!-- PAGE 18 -->
+                <div class="page" data-page="18">
+                    <div class="content-area">
+                        <h2>Ejemplo Resuelto: Elongación</h2>
+                        <div class="gray-box">
+                        <p><strong>Problema:</strong> Una partícula oscila con MAS de amplitud \(A = 0.05\;\text{m}\) y frecuencia \(f = 2\;\text{Hz}\). Determinar la elongación en \(t = 0.1\;\text{s}\) si \(\alpha = 0\).</p>
+                        </div>
+                        <p><strong>Solución:</strong></p>
+                        <p>\(\omega = 2\pi f = 2\pi(2) = 4\pi\;\text{rad/s}\)</p>
+                        <p>\(x = A\sen(\omega t) = 0.05\sen(4\pi \cdot 0.1)\)</p>
+                        <p>\(x = 0.05\sen(0.4\pi) = 0.05\sen(72°)\)</p>
+                        <div class="formula-box">\[ x = 0.05 \times 0.951 = 0.0476\;\text{m} \approx 4.76\;\text{cm} \]</div>
+                    </div>
+                </div>
+                <!-- PAGE 19: CAP 3 - Fricción -->
+                <div class="page" data-page="19">
+                    <div class="content-area">
+                        <h1>Cap. 3 — Fricción</h1>
+                        <p>Cuando un objeto se desliza o intenta desplazarse sobre una superficie, experimenta una fuerza de resistencia llamada <span class="def-cyan">fuerza de fricción</span>, debida a las interacciones intermoleculares entre las superficies en contacto.</p>
+                        <p><span class="def-orange">Fricción estática:</span> La fuerza máxima que impide el inicio del movimiento:</p>
+                        <div class="formula-box">\[ f_{e,\text{máx}} = \mu_e \cdot N \]</div>
+                        <p><span class="def-orange">Fricción cinética:</span> La fuerza que se opone al movimiento una vez este ha iniciado:</p>
+                        <div class="formula-box">\[ f_k = \mu_k \cdot N \]</div>
+                        <p>Donde \(N\) es la fuerza normal y \(\mu_e > \mu_k\) siempre.</p>
+                    </div>
+                </div>
+                <!-- PAGE 20: Friction details -->
+                <div class="page" data-page="20">
+                    <div class="content-area">
+                        <h2>Coeficientes de Fricción</h2>
+                        <p>Los coeficientes de fricción dependen de la naturaleza de las superficies en contacto:</p>
+                        <div style="overflow-x:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-size:14px;margin:10px 0;">
+                            <tr style="background:rgba(0,151,167,0.2);"><th style="padding:6px;border:1px solid #ccc;">Superficies</th><th style="padding:6px;border:1px solid #ccc;">μₑ</th><th style="padding:6px;border:1px solid #ccc;">μₖ</th></tr>
+                            <tr><td style="padding:5px;border:1px solid #ddd;">Acero-Acero</td><td style="padding:5px;border:1px solid #ddd;text-align:center;">0.74</td><td style="padding:5px;border:1px solid #ddd;text-align:center;">0.57</td></tr>
+                            <tr><td style="padding:5px;border:1px solid #ddd;">Madera-Madera</td><td style="padding:5px;border:1px solid #ddd;text-align:center;">0.40</td><td style="padding:5px;border:1px solid #ddd;text-align:center;">0.20</td></tr>
+                            <tr><td style="padding:5px;border:1px solid #ddd;">Caucho-Concreto</td><td style="padding:5px;border:1px solid #ddd;text-align:center;">1.00</td><td style="padding:5px;border:1px solid #ddd;text-align:center;">0.80</td></tr>
+                            <tr><td style="padding:5px;border:1px solid #ddd;">Hielo-Hielo</td><td style="padding:5px;border:1px solid #ddd;text-align:center;">0.10</td><td style="padding:5px;border:1px solid #ddd;text-align:center;">0.03</td></tr>
+                        </table>
+                        </div>
+                        <div class="note-orange">⚠️ El coeficiente de fricción estática siempre es mayor que el cinético: \(\mu_e > \mu_k\).</div>
+                    </div>
+                </div>
+                <!-- PAGE 21: Friction sim -->
+                <div class="page" data-page="21">
+                    <div class="content-area">
+                        <h2>🎮 Simulación: Fricción</h2>
+                        <div class="sim-container">
+                            <h3 style="text-align:center;margin:5px 0;">Fricción Estática vs Cinética</h3>
+                            <canvas id="simFriction" width="500" height="220"></canvas>
+                            <div class="sim-controls">
+                                <label>Fuerza aplicada: <input type="range" id="fric-F" min="0" max="100" value="0"></label>
+                                <label>μₑ: <input type="range" id="fric-ue" min="0.1" max="1.0" step="0.05" value="0.5"></label>
+                                <label>μₖ: <input type="range" id="fric-uk" min="0.05" max="0.8" step="0.05" value="0.3"></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- PAGE 22 -->
+                <div class="page" data-page="22">
+                    <div class="content-area">
+                        <h2>Ejemplo Resuelto: Fricción</h2>
+                        <div class="gray-box">
+                        <p><strong>Problema:</strong> Un bloque de 10 kg reposa sobre una superficie horizontal con \(\mu_e = 0.4\) y \(\mu_k = 0.3\). ¿Qué fuerza horizontal mínima lo pone en movimiento? ¿Y cuál es la aceleración si se aplica esa fuerza?</p>
+                        </div>
+                        <p><strong>Solución:</strong></p>
+                        <p>\(N = mg = 10 \times 9.8 = 98\;\text{N}\)</p>
+                        <p>\(f_{e,\text{máx}} = \mu_e \cdot N = 0.4 \times 98 = 39.2\;\text{N}\)</p>
+                        <p>Una vez en movimiento: \(f_k = 0.3 \times 98 = 29.4\;\text{N}\)</p>
+                        <div class="formula-box">\[ a = \frac{F - f_k}{m} = \frac{39.2 - 29.4}{10} = 0.98\;\text{m/s}^2 \]</div>
+                    </div>
+                </div>
+
+                <!-- PAGE 23: Visualización MAS - Proyección Circular -->
+                <div class="page" data-page="23">
+                    <div class="content-area">
+                        <h1>Visualización del MAS</h1>
+                        <h2>Proyección Circular</h2>
+                        <p>El movimiento armónico simple se puede visualizar como la <span class="highlight-text">proyección de un movimiento circular uniforme</span> sobre un plano.</p>
+                        <p>Un manubrio está unido al borde de una rueda que gira con velocidad angular \(\omega\) constante. Como la rueda tiene un movimiento circular uniforme, el manubrio siempre emplea el mismo tiempo en dar una vuelta.</p>
+                        <p>La proyección o sombra del manubrio sobre la pared es un movimiento oscilatorio periódico pero <strong>no es uniforme</strong>, ya que al acercarse a los extremos la velocidad disminuye.</p>
+                    </div>
+                </div>
+                <!-- PAGE 24 -->
+                <div class="page" data-page="24">
+                    <div class="content-area">
+                        <p>Además, el período del manubrio es igual al período de la sombra sobre la pared.</p>
+                        <p>Como la sombra del manubrio tiene un movimiento oscilatorio, periódico y con amplitud constante, entonces se dice que posee un <span class="def-cyan">movimiento armónico simple</span>.</p>
+                        <div class="sim-container">
+                            <h3 style="text-align:center;margin:5px 0;">🎮 Simulación: Proyección Circular del MAS</h3>
+                            <canvas id="simCircProj" width="520" height="280"></canvas>
+                            <div class="sim-controls">
+                                <label>ω: <input type="range" id="cp-w" min="1" max="10" value="3"></label>
+                                <button onclick="cpToggle()">▶ Play/Pausa</button>
+                                <span style="font-size:11px;color:#888;">🖱️ Arrastra la partícula P</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- PAGE 25: Derivación ω -->
+                <div class="page" data-page="25">
+                    <div class="content-area">
+                        <h2>Derivación de \(\omega\)</h2>
+                        <p>Cuando la partícula da una vuelta completa gira un ángulo igual a \(2\pi\) radianes y tarda un tiempo igual a un período \(T\), por lo que:</p>
+                        <div class="formula-box" style="background:rgba(0,230,118,0.25);">\[ \omega = \frac{2\pi}{T} \]</div>
+                        <p>La velocidad angular \(\omega\) se define como el ángulo girado por la partícula (medido en radianes) dividido por el tiempo transcurrido:</p>
+                        <div class="formula-box">\[ \omega = \frac{\text{ángulo girado en radianes}}{\text{tiempo transcurrido}} \]</div>
+                    </div>
+                </div>
+                <!-- PAGE 26 -->
+                <div class="page" data-page="26">
+                    <div class="content-area">
+                        <h2>Ángulo de Fase y Posición</h2>
+                        <p>Supongamos que la partícula inicia su movimiento en el punto \(Q\) (cuya posición angular es \(\alpha\)) y que gira con velocidad angular constante \(\omega\). En el tiempo \(t\) habrá girado el ángulo \(\omega \cdot t\) llegando hasta la posición \(P\).</p>
+                        <p>El ángulo total \(\theta\) es entonces:</p>
+                        <div class="formula-box" style="background:rgba(0,230,118,0.25);">\[ \theta = \omega \cdot t + \alpha \]</div>
+                        <p>Cuando la partícula llega al punto \(P\), su proyección sobre la pared llega al punto \(P'\). La distancia recorrida (elongación) por la proyección es \(x\).</p>
+                        <div class="sim-container">
+                            <h3 style="text-align:center;margin:5px 0;">🎮 Derivación: Posición x(t)</h3>
+                            <canvas id="simDerivPos" width="520" height="280"></canvas>
+                            <div class="sim-controls">
+                                <label>α: <input type="range" id="dp-alpha" min="0" max="6.28" step="0.1" value="0.5"></label>
+                                <button onclick="dpToggle()">▶ Play/Pausa</button>
+                                <span style="font-size:11px;color:#888;">🖱️ Arrastra P en el círculo</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- PAGE 27: Derivación de x = A·sen θ -->
+                <div class="page" data-page="27">
+                    <div class="content-area">
+                        <h2>Derivación de \(x = A \cdot \sen\,\theta\)</h2>
+                        <p>Aplicando trigonometría al triángulo formado por el radio \(A\), la proyección \(x\) y el arco \(s\):</p>
+                        <div class="formula-box">\[ \sen\,\theta = \frac{\text{cateto opuesto}}{\text{hipotenusa}} = \frac{x}{A} \]</div>
+                        <p>Obtenemos:</p>
+                        <div class="formula-box" style="background:rgba(0,230,118,0.25);">\[ x = A \cdot \sen\,\theta \]</div>
+                        <p>Puesto que: \(\theta = \omega \cdot t + \alpha\), tenemos:</p>
+                        <div class="formula-box" style="background:rgba(0,230,118,0.25);">\[ x = A \cdot \sen(\omega \cdot t + \alpha) \]</div>
+                        <p>Con: \(\omega = \dfrac{2\pi}{T}\)</p>
+                    </div>
+                </div>
+                <!-- PAGE 28 -->
+                <div class="page" data-page="28">
+                    <div class="content-area">
+                        <h2>Nomenclatura del MAS</h2>
+                        <p>La cantidad \(A\) se denomina <span class="def-cyan">amplitud</span>. La velocidad angular \(\omega\) con la cual gira la partícula sobre la circunferencia, se le cambia el nombre por <span class="def-cyan">"frecuencia angular"</span>, y el ángulo \(\alpha\) que determina la posición angular inicial de la partícula, ahora se le cambia el nombre por el de <span class="def-cyan">"fase inicial"</span>.</p>
+                        <p>En lo sucesivo se asume que una partícula se mueve con <span class="def-orange">movimiento armónico simple</span>, si la ecuación de su movimiento es de la forma:</p>
+                        <div class="formula-box" style="background:rgba(0,230,118,0.25);">\[ x = A \cdot \sen(\omega \cdot t + \alpha) \]</div>
+                        <p>O también:</p>
+                        <div class="formula-box" style="background:rgba(0,230,118,0.25);">\[ x = A \cdot \cos(\omega \cdot t + \phi) \]</div>
+                    </div>
+                </div>
+                <!-- PAGE 29: Velocidad en el MAS -->
+                <div class="page" data-page="29">
+                    <div class="content-area">
+                        <h1>Velocidad en el MAS</h1>
+                        <h2>Derivación Geométrica</h2>
+                        <p><span class="def-cyan">Velocidad en el Movimiento Armónico Simple:</span> La velocidad en el movimiento armónico simple puede obtenerse al proyectar la velocidad de una partícula que se mueve con movimiento circular uniforme sobre un plano.</p>
+                        <p>Recordemos que en el movimiento circular uniforme, la velocidad es un vector <span class="highlight-text">tangente a la circunferencia</span> y por tanto, perpendicular al radio; además su magnitud viene dada por la expresión:</p>
+                        <div class="formula-box" style="background:rgba(0,230,118,0.25);">\[ v = \omega \cdot r \]</div>
+                    </div>
+                </div>
+                <!-- PAGE 30 -->
+                <div class="page" data-page="30">
+                    <div class="content-area">
+                        <p>Como en este caso, el radio de la circunferencia es la misma amplitud, podemos escribir:</p>
+                        <div class="formula-box" style="background:rgba(0,230,118,0.25);">\[ v = \omega \cdot A \]</div>
+                        <div class="sim-container">
+                            <h3 style="text-align:center;margin:5px 0;">🎮 Simulación: Vector Velocidad</h3>
+                            <canvas id="simVelVec" width="520" height="280"></canvas>
+                            <div class="sim-controls">
+                                <label>ω: <input type="range" id="vv-w" min="1" max="10" value="3"></label>
+                                <button onclick="vvToggle()">▶ Play/Pausa</button>
+                                <span style="font-size:11px;color:#888;">🖱️ Arrastra P</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- PAGE 31: Derivación vx -->
+                <div class="page" data-page="31">
+                    <div class="content-area">
+                        <h2>Derivación de \(v_x\)</h2>
+                        <p>La proyección de la velocidad sobre el plano vertical es entonces:</p>
+                        <div class="formula-box">\[ \cos\,\theta = \frac{v_x}{v} \]</div>
+                        <p>Despejando:</p>
+                        <div class="formula-box">\[ v_x = v \cdot \cos\,\theta = \omega \cdot A \cdot \cos\,\theta \]</div>
+                        <p>Dado que: \(\theta = \omega \cdot t + \alpha\)</p>
+                        <p>Se concluye:</p>
+                        <div class="formula-box" style="background:rgba(0,230,118,0.25);">\[ v_x = \omega \cdot A \cdot \cos(\omega \cdot t + \alpha) \]</div>
+                    </div>
+                </div>
+                <!-- PAGE 32 -->
+                <div class="page" data-page="32">
+                    <div class="content-area">
+                        <h2>Resumen: Cinemática del MAS (Geométrica)</h2>
+                        <p>A partir de la proyección del movimiento circular uniforme, hemos derivado geométricamente las ecuaciones del MAS:</p>
+                        <ol class="hl-list">
+                            <li><strong>Posición:</strong> \(x = A \cdot \sen(\omega t + \alpha)\)</li>
+                            <li><strong>Velocidad:</strong> \(v_x = \omega A \cos(\omega t + \alpha)\)</li>
+                            <li><strong>Frecuencia angular:</strong> \(\omega = \dfrac{2\pi}{T}\)</li>
+                            <li><strong>Fase:</strong> \(\theta = \omega t + \alpha\)</li>
+                        </ol>
+                        <div class="note-orange">💡 La derivación geométrica permite visualizar por qué la velocidad es máxima en el centro (coseno máximo) y cero en los extremos (coseno cero).</div>
+                    </div>
+                </div>
+
+
+                <!-- PAGE 33: Aceleración en el MAS -->
+                <div class="page" data-page="41">
+                    <div class="content-area">
+                        <h1>Aceleración en el MAS</h1>
+                        <p><span class="def-cyan">Aceleración en el Movimiento Armónico Simple:</span> La aceleración en el movimiento armónico simple puede obtenerse al proyectar la aceleración de una partícula que se mueve con movimiento circular uniforme sobre un plano.</p>
+                        <p>Recordemos que en el movimiento circular uniforme, la aceleración es un <span class="highlight-text">vector dirigido hacia el centro de la circunferencia</span>; además su magnitud viene dada por la expresión:</p>
+                        <div class="formula-box" style="background:rgba(0,230,118,0.25);">\[ a_c = \omega^2 \cdot r = \omega^2 \cdot A \]</div>
+                        <p>El triángulo formado por la aceleración centrípeta \(\vec{a}_c\) y su componente vertical \(\vec{a}_x\) indica que \(\sen \theta = \frac{a_x}{a_c}\).</p>
+                    </div>
+                </div>
+                <!-- PAGE 34 -->
+                <div class="page" data-page="42">
+                    <div class="content-area">
+                        <h2>Derivación de \(a_x\)</h2>
+                        <p>Despejando de la relación trigonométrica obtenemos:</p>
+                        <div class="formula-box">\[ a_x = a_c \cdot \sen\theta = \omega^2 \cdot A \cdot \sen\theta \]</div>
+                        <p>Dado que \(\theta = \omega \cdot t + \alpha\), se concluye que la proyección de la aceleración es:</p>
+                        <div class="formula-box" style="background:rgba(255,109,0,0.15);border-color:var(--brand-orange);">\[ a_x = -\omega^2 \cdot A \cdot \sen(\omega \cdot t + \alpha) \]</div>
+                        <div class="note-orange">⚠️ El signo negativo se incluye para indicar que la aceleración de la proyección \(P'\) apunta siempre hacia la posición \(O'\) que es el centro de la trayectoria (fuerza restitutiva).</div>
+                        <div class="sim-container">
+                            <h3 style="text-align:center;margin:5px 0;">🎮 Simulación: Vector Aceleración</h3>
+                            <canvas id="simAccVec" width="520" height="240"></canvas>
+                            <div class="sim-controls">
+                                <label>ω: <input type="range" id="av-w" min="1" max="10" value="3"></label>
+                                <button onclick="avToggle()">▶ Play/Pausa</button>
+                                <span style="font-size:11px;color:#888;">🖱️ Arrastra P</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- PAGE 35: Relación Aceleración-Elongación -->
+                <div class="page" data-page="35">
+                    <div class="content-area">
+                        <h2>Relación Aceleración - Elongación</h2>
+                        <p>Puesto que la ecuación que determina la elongación es:</p>
+                        <div class="formula-box" style="background:rgba(0,230,118,0.25);">\[ x = A \cdot \sen(\omega \cdot t + \alpha) \]</div>
+                        <p>Puede observarse que, reemplazando la elongación en la ecuación de aceleración, obtenemos la forma más compacta:</p>
+                        <div class="formula-box" style="background:rgba(0,230,118,0.25);">\[ a_x = -\omega^2 \cdot x \]</div>
+                        <p>Puede concluirse que la aceleración es <strong>máxima en los extremos</strong> (en \(x = +A\) y en \(x = -A\)) y es <strong>cero en el origen</strong> (en \(x = 0\)):</p>
+                        <div class="formula-box" style="background:rgba(0,151,167,0.15);">\[ |a_{\text{máx}}| = \omega^2 \cdot A \]</div>
+                    </div>
+                </div>
+                <!-- PAGE 36: Velocidad y Elongación -->
+                <div class="page" data-page="36">
+                    <div class="content-area">
+                        <h1>Velocidad respecto a Elongación</h1>
+                        <p>Se puede encontrar una expresión que relacione la velocidad con la elongación en el movimiento armónico simple si utilizamos la identidad pitagórica:</p>
+                        <div class="formula-box">\[ \sen^2 \theta + \cos^2 \theta = 1 \]</div>
+                        <p>De aquí obtenemos: \(\cos^2 \theta = 1 - \sen^2 \theta\)</p>
+                        <p>Dado que la velocidad es \(v_x = \omega \cdot A \cdot \cos(\omega t + \alpha)\), podemos elevar al cuadrado:</p>
+                        <div class="formula-box">\[ v_x^2 = \omega^2 \cdot A^2 \cdot (1 - \sen^2\theta) \]</div>
+                        <p>O bien:</p>
+                        <div class="formula-box">\[ v_x^2 = \omega^2 \cdot A^2 - \omega^2 \cdot (A\cdot\sen\theta)^2 \]</div>
+                    </div>
+                </div>
+                <!-- PAGE 37 -->
+                <div class="page" data-page="37">
+                    <div class="content-area">
+                        <p>Dado que la elongación es \(x = A \cdot \sen\theta\), se concluye:</p>
+                        <div class="formula-box">\[ v_x^2 = \omega^2 \cdot A^2 - \omega^2 \cdot x^2 \]</div>
+                        <p>Factorizando y despejando la velocidad:</p>
+                        <div class="formula-box" style="background:rgba(0,230,118,0.25);">\[ v_x^2 = \omega^2 \cdot (A^2 - x^2) \implies v_x = \pm \omega \sqrt{A^2 - x^2} \]</div>
+                        <p>Puede concluirse que la velocidad es <strong>cero en los extremos</strong> (en \(x = +A\) y en \(x = -A\)) y es <strong>máxima en el origen</strong> (en \(x = 0\)):</p>
+                        <div class="formula-box" style="background:rgba(0,151,167,0.15);">\[ |v_{\text{máx}}| = \omega \cdot A \]</div>
+                        <div class="sim-container">
+                            <h3 style="text-align:center;margin:5px 0;">🎮 Magnitudes en Posiciones Críticas</h3>
+                            <canvas id="simVelPos" width="520" height="150"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <!-- PAGE 38: Gráficas -->
+                <div class="page" data-page="38">
+                    <div class="content-area">
+                        <h2>Gráficas del MAS: x, v, a</h2>
+                        <svg viewBox="0 0 500 460" style="width:100%; height:auto;">
+                            <!-- background grid -->
+                            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0,0,0,0.05)" stroke-width="1"/></pattern>
+                            <rect width="500" height="460" fill="url(#grid)" />
+                            
+                            <!-- Ejes -->
+                            <line x1="40" y1="20" x2="40" y2="440" stroke="#333" stroke-width="1.5" />
+                            <line x1="40" y1="80" x2="480" y2="80" stroke="#333" stroke-width="1.5" />
+                            <text x="25" y="45" font-size="14" font-weight="bold" fill="#00e676">x</text>
+                            
+                            <line x1="40" y1="230" x2="480" y2="230" stroke="#333" stroke-width="1.5" />
+                            <text x="25" y="195" font-size="14" font-weight="bold" fill="#1a6bff">v</text>
+                            
+                            <line x1="40" y1="380" x2="480" y2="380" stroke="#333" stroke-width="1.5" />
+                            <text x="25" y="345" font-size="14" font-weight="bold" fill="#ff6d00">a</text>
+                            
+                            <!-- Vertical time lines T/4, T/2, 3T/4, T -->
+                            <g stroke="rgba(0,0,0,0.3)" stroke-dasharray="4,4" stroke-width="1">
+                                <line x1="120" y1="20" x2="120" y2="440"/>
+                                <line x1="200" y1="20" x2="200" y2="440"/>
+                                <line x1="280" y1="20" x2="280" y2="440"/>
+                                <line x1="360" y1="20" x2="360" y2="440"/>
+                                <line x1="440" y1="20" x2="440" y2="440"/>
+                            </g>
+                            <g font-size="12" fill="#555">
+                                <text x="110" y="15">T/4</text><text x="190" y="15">T/2</text>
+                                <text x="268" y="15">3T/4</text><text x="355" y="15">T</text><text x="430" y="15">5T/4</text>
+                            </g>
+
+                            <!-- Ondas: Posición -->
+                            <path d="M 40 80 Q 80 20 120 80 T 200 80 T 280 80 T 360 80 T 440 80 T 480 80" fill="none" stroke="#00e676" stroke-width="2.5" />
+                            
+                            <!-- Ondas: Velocidad (derivada de la posición) coseno -->
+                            <path d="M 40 170 C 65 170 95 290 120 290 C 145 290 175 170 200 170 C 225 170 255 290 280 290 C 305 290 335 170 360 170 C 385 170 415 290 440 290 C 465 290 480 170 480 170" fill="none" stroke="#1a6bff" stroke-width="2.5" />
+
+                            <!-- Ondas: Aceleración (inversa de la posición) -seno -->
+                            <path d="M 40 380 Q 80 440 120 380 T 200 380 T 280 380 T 360 380 T 440 380 T 480 380" fill="none" stroke="#ff6d00" stroke-width="2.5" />
+                        </svg>
+                        <div class="note-orange" style="margin-top:-10px;">La gráfica de \(y(x)\) muestra que cuando \(x\) es \(\pm A\), su pendiente (\(v\)) es cero, y su concavidad (\(a\)) es máxima (negativa respecto a \(x\)).</div>
+                    </div>
+                </div>
+                <!-- PAGE 39: Ejercicio 1 -->
+                <div class="page" data-page="39">
+                    <div class="content-area">
+                        <h2>Ejemplo Resuelto 1</h2>
+                        <div class="gray-box">
+                            <p><strong>Problema:</strong> Un oscilador armónico de amplitud \(20\;\text{cm}\) tiene una velocidad de \(4\;\text{m/s}\) cuando pasa por su posición de equilibrio. ¿Cuál es el período y la aceleración máxima?</p>
+                        </div>
+                        <p><strong>Solución:</strong></p>
+                        <p>Datos: \(A = 20\;\text{cm} = 0.2\;\text{m}\). Cuando pasa por equilibrio (\(x=0\)), la velocidad es máxima, por lo cual:</p>
+                        <div class="formula-box">\[ v_{\max} = \omega \cdot A \implies 4 = \omega \cdot 0.2 \]</div>
+                        <p>Despejando la frecuencia angular \(\omega\):</p>
+                        <p>\(\omega = \frac{4}{0.2} = 20\;\text{rad/s}\)</p>
+                        <p>Como \(\omega = \frac{2\pi}{T}\), despejamos el período \(T\):</p>
+                        <p>\(T = \frac{2\pi}{20} = \frac{\pi}{10}\;\text{s} \approx 0.314\;\text{s}\)</p>
+                        <p>La aceleración máxima es:</p>
+                        <div class="formula-box">\[ |a_{\text{máx}}| = \omega^2 \cdot A = (20)^2 \cdot 0.2 = 400 \cdot 0.2 = 80\;\text{m/s}^2 \]</div>
+                    </div>
+                </div>
+                <!-- PAGE 40: Ejercicio 2 -->
+                <div class="page" data-page="40">
+                    <div class="content-area">
+                        <h2>Ejemplo Resuelto 2</h2>
+                        <div class="gray-box">
+                            <p><strong>Problema:</strong> El movimiento de la aguja de una máquina de coser es prácticamente armónico. Si su amplitud es \(10\;\text{cm}\) y su aceleración máxima es \(40\;\text{cm/s}^2\), ¿cuáles son su período y su velocidad máxima?</p>
+                        </div>
+                        <p><strong>Solución:</strong></p>
+                        <p>Datos: \(A = 10\;\text{cm}\), \(|a_{\text{máx}}| = 40\;\text{cm/s}^2\).</p>
+                        <p>Sabemos que la aceleración máxima es:</p>
+                        <div class="formula-box">\[ |a_{\text{máx}}| = \omega^2 \cdot A \]</div>
+                        <p>\(\omega = \sqrt{\frac{a_{\text{máx}}}{A}} = \sqrt{\frac{40}{10}} = \sqrt{4} = 2\;\text{rad/s}\)</p>
+                        <p>El período \(T\) es:</p>
+                        <p>\(T = \frac{2\pi}{\omega} = \frac{2\pi}{2} = \pi\;\text{s} \approx 3.1416\;\text{s}\)</p>
+                        <p>La velocidad máxima es:</p>
+                        <div class="formula-box">\[ |v_{\text{máx}}| = \omega \cdot A = 2 \cdot 10 = 20\;\text{cm/s} \]</div>
+                    </div>
+                </div>
+
+                <!-- PAGE 41: Summary -->
+                <div class="page" data-page="41">
+                    <div class="content-area">
+                        <h1>Conclusiones</h1>
+                        <p>En este cuaderno hemos estudiado:</p>
+                        <ol class="hl-list">
+                            <li>El movimiento oscilatorio y sus tipos (sencillo/completo).</li>
+                            <li>Las magnitudes fundamentales: período, frecuencia, amplitud y elongación.</li>
+                            <li>El Movimiento Armónico Simple y su ecuación \(x = A\sen(\omega t + \alpha)\).</li>
+                            <li>La fase, velocidad y aceleración en el MAS.</li>
+                            <li>La elongación como función del tiempo.</li>
+                            <li>La fricción estática y cinética con sus coeficientes.</li>
+                            <li>La visualización del MAS como proyección circular.</li>
+                            <li>La derivación geométrica de las ecuaciones de posición y velocidad.</li>
+                            <li>La aceleración como vector centrípeto y restituido ($a_x = -\omega^2 x$).</li>
+                            <li>Relación directa de velocidad con posición ($v = \pm \omega \sqrt{A^2-x^2}$).</li>
+                        </ol>
+                    </div>
+                </div>
+                <!-- PAGE 42: Final -->
+                <div class="page" data-page="42">
+                    <div class="content-area page-cover" style="padding-top:80px !important;">
+                        <h2 style="color:var(--brand-cyan);">¡Gracias por estudiar con nosotras!</h2>
+                        <p style="margin-top:30px;">Este cuaderno digital fue diseñado con simulaciones interactivas para facilitar la comprensión de los conceptos de la Física III.</p>
+                        <div class="author" style="margin-top:50px;">María Fernanda Mora &amp; Salomé Muñoz</div>
+                        <p style="margin-top:20px;font-size:14px;opacity:0.6;">Universidad Tecnológica de Pereira — 2026-I</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <footer>© 2026-I María Fernanda Mora &amp; Salomé Muñoz — Física III</footer>
+
+    <script>
+        // === NAVIGATION ===
+        let currentPage = 1;
+        const pages = document.querySelectorAll('.page');
+        const MAX_PAGES = pages.length;
+
+        // Inject holes
+        const hc = document.getElementById('holesContainer');
+        for(let i=0;i<20;i++){
+            let h=document.createElement('div'); h.className='hole';
+            h.style.top=(5+i*4.7)+'%'; h.style.left='calc(50% - 6px)';
+            hc.appendChild(h);
+        }
+
+        function updateBook(){
+            pages.forEach((p,idx)=>{
+                const pn=idx+1;
+                if(pn%2===0){p.classList.add('right-side');p.classList.remove('left-side');}
+                else{p.classList.add('left-side');p.classList.remove('right-side');}
+                p.classList.remove('active-left','active-right','flipped-past-left','flipped-past-right');
+                if(pn<currentPage) p.classList.add('flipped-past-left');
+                else if(pn>currentPage+1) p.classList.add('flipped-past-right');
+                else if(pn===currentPage) p.classList.add('active-left');
+                else if(pn===currentPage+1) p.classList.add('active-right');
+            });
+            document.getElementById('pageCounter').innerText=`${currentPage}-${Math.min(currentPage+1,MAX_PAGES)} / ${MAX_PAGES}`;
+            document.getElementById('progressBar').style.width=((currentPage+1)/MAX_PAGES)*100+'%';
+            if(window.MathJax) MathJax.typesetPromise();
+        }
+        function nextPage(){if(currentPage+2<=MAX_PAGES){currentPage+=2;updateBook();}}
+        function prevPage(){if(currentPage-2>=1){currentPage-=2;updateBook();}}
+        function goTo(p){currentPage=(p%2===0)?(p-1):p; document.getElementById('sidebar').classList.remove('open'); updateBook();}
+        document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')nextPage();if(e.key==='ArrowLeft')prevPage();});
+        function toggleIndex(){document.getElementById('sidebar').classList.toggle('open');}
+        function toggleFullscreen(){
+            if(!document.fullscreenElement) document.documentElement.requestFullscreen();
+            else if(document.exitFullscreen) document.exitFullscreen();
+        }
+
+        // === SIM 1: PENDULUM ===
+        let pendRun=true, pendT=0;
+        function pendToggle(){pendRun=!pendRun;}
+        function loopPend(){
+            const c=document.getElementById('simPendulum'); if(!c)return requestAnimationFrame(loopPend);
+            const ctx=c.getContext('2d');
+            const L=parseFloat(document.getElementById('pend-L').value);
+            if(pendRun)pendT+=0.03;
+            const angle=0.5*Math.sin(Math.sqrt(9.8/(L*0.01))*pendT);
+            ctx.clearRect(0,0,500,220);
+            // ceiling
+            ctx.strokeStyle='#555';ctx.lineWidth=2;
+            ctx.beginPath();ctx.moveTo(150,10);ctx.lineTo(350,10);ctx.stroke();
+            for(let i=150;i<350;i+=12){ctx.beginPath();ctx.moveTo(i,10);ctx.lineTo(i+6,0);ctx.stroke();}
+            const px=250, py=15;
+            const bx=px+L*Math.sin(angle), by=py+L*Math.cos(angle);
+            // string
+            ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(bx,by);
+            ctx.strokeStyle='#888';ctx.lineWidth=2;ctx.stroke();
+            // bob
+            ctx.beginPath();ctx.arc(bx,by,14,0,Math.PI*2);
+            ctx.fillStyle='#555';ctx.fill();ctx.strokeStyle='#333';ctx.stroke();
+            // equilibrium line
+            ctx.setLineDash([4,4]);ctx.strokeStyle='#aaa';
+            ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px,py+L+20);ctx.stroke();
+            ctx.setLineDash([]);
+            // labels
+            ctx.fillStyle='#1a6bff';ctx.font='13px Lora';
+            ctx.fillText('O',px-12,py+L/2);
+            ctx.fillText('A='+Math.abs(angle*L).toFixed(1)+'px',bx+20,by);
+            // amplitude arc
+            if(Math.abs(angle)>0.01){
+                ctx.beginPath();ctx.strokeStyle='#00e676';ctx.lineWidth=1.5;
+                ctx.arc(px,py,L*0.3,-Math.PI/2+angle,-Math.PI/2);ctx.stroke();
+                ctx.fillStyle='#00e676';ctx.fillText('θ',px+L*0.32*Math.sin(angle/2)-5,py+L*0.32*Math.cos(angle/2));
+            }
+            requestAnimationFrame(loopPend);
+        }
+
+        // === SIM 2: MASS-SPRING ===
+        let spRun=true, spT=0;
+        function spToggle(){spRun=!spRun;}
+        function loopSpring(){
+            const c=document.getElementById('simSpring'); if(!c)return requestAnimationFrame(loopSpring);
+            const ctx=c.getContext('2d');
+            const m=parseFloat(document.getElementById('sp-m').value)||100;
+            const k=parseFloat(document.getElementById('sp-k').value)||10;
+            const omega=Math.sqrt(k/m);
+            if(spRun)spT+=0.05;
+            const pos=Math.sin(omega*spT)*120;
+            ctx.clearRect(0,0,500,180);
+            // wall
+            ctx.fillStyle='#8B5E3C';ctx.fillRect(0,40,15,100);
+            // ground
+            ctx.strokeStyle='#555';ctx.lineWidth=1;
+            ctx.beginPath();ctx.moveTo(15,140);ctx.lineTo(490,140);ctx.stroke();
+            // spring zigzag
+            const sx=15, ex=200+pos, sy=90;
+            const segs=12, segW=(ex-sx)/segs;
+            ctx.beginPath();ctx.moveTo(sx,sy);
+            for(let i=0;i<segs;i++){
+                const nx=sx+(i+0.5)*segW, ny=sy+((i%2===0)?-15:15);
+                ctx.lineTo(nx,ny);
+            }
+            ctx.lineTo(ex,sy);
+            ctx.strokeStyle='#7c4dff';ctx.lineWidth=2.5;ctx.stroke();
+            // mass block
+            ctx.fillStyle='#00e676';ctx.strokeStyle='#333';ctx.lineWidth=1;
+            ctx.fillRect(ex,sy-20,40,40);ctx.strokeRect(ex,sy-20,40,40);
+            ctx.fillStyle='#333';ctx.font='12px Lora';ctx.fillText('m',ex+12,sy+5);
+            // equilibrium
+            ctx.setLineDash([4,4]);ctx.strokeStyle='#aaa';
+            ctx.beginPath();ctx.moveTo(220,50);ctx.lineTo(220,140);ctx.stroke();
+            ctx.setLineDash([]);ctx.fillStyle='#1a6bff';ctx.fillText('O',216,45);
+            // x vector
+            if(Math.abs(pos)>2){
+                ctx.beginPath();ctx.moveTo(220,155);ctx.lineTo(220+pos,155);
+                ctx.strokeStyle=pos>0?'#ff6d00':'#7c4dff';ctx.lineWidth=2;ctx.setLineDash([]);ctx.stroke();
+                ctx.fillStyle=pos>0?'#ff6d00':'#7c4dff';ctx.fillText('x='+(pos/120).toFixed(2)+'A',220+pos/2-15,170);
+            }
+            // T display
+            const T=2*Math.PI/omega;
+            ctx.fillStyle='#333';ctx.font='13px Lora';ctx.fillText('T = '+T.toFixed(2)+' s',380,30);
+            requestAnimationFrame(loopSpring);
+        }
+
+        // === SIM 3: ELONGATION GRAPH ===
+        let elongT=0, elongData=[];
+        function elongReset(){elongT=0;elongData=[];}
+        function loopElong(){
+            const c=document.getElementById('simElongation'); if(!c)return requestAnimationFrame(loopElong);
+            const ctx=c.getContext('2d');
+            const A=parseFloat(document.getElementById('elong-A').value);
+            const w=parseFloat(document.getElementById('elong-w').value)*0.01;
+            const alpha=parseFloat(document.getElementById('elong-a').value);
+            elongT+=1;
+            const x=A*Math.sin(w*elongT+alpha);
+            elongData.push(x);
+            if(elongData.length>480)elongData.shift();
+            ctx.clearRect(0,0,500,250);
+            // axes
+            ctx.strokeStyle='#333';ctx.lineWidth=1;
+            ctx.beginPath();ctx.moveTo(10,125);ctx.lineTo(490,125);ctx.stroke();
+            ctx.beginPath();ctx.moveTo(10,10);ctx.lineTo(10,240);ctx.stroke();
+            // labels
+            ctx.fillStyle='#1a6bff';ctx.font='12px Lora';
+            ctx.fillText('t',480,140);ctx.fillText('x(t)',15,20);
+            ctx.fillText('+A',12,125-A+5);ctx.fillText('-A',12,125+A+5);
+            // amplitude lines
+            ctx.setLineDash([3,3]);ctx.strokeStyle='rgba(0,230,118,0.5)';
+            ctx.beginPath();ctx.moveTo(10,125-A);ctx.lineTo(490,125-A);ctx.stroke();
+            ctx.beginPath();ctx.moveTo(10,125+A);ctx.lineTo(490,125+A);ctx.stroke();
+            ctx.setLineDash([]);
+            // wave
+            ctx.beginPath();ctx.strokeStyle='#7c4dff';ctx.lineWidth=2;
+            for(let i=0;i<elongData.length;i++){
+                const px=10+i, py=125-elongData[i];
+                if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+            }
+            ctx.stroke();
+            // current dot
+            if(elongData.length>0){
+                const lx=10+elongData.length-1, ly=125-elongData[elongData.length-1];
+                ctx.beginPath();ctx.arc(lx,ly,5,0,Math.PI*2);ctx.fillStyle='#ff6d00';ctx.fill();
+            }
+            requestAnimationFrame(loopElong);
+        }
+
+        // === SIM 4: FRICTION ===
+        let fricPos=0, fricVel=0, fricMoving=false;
+        function loopFric(){
+            const c=document.getElementById('simFriction'); if(!c)return requestAnimationFrame(loopFric);
+            const ctx=c.getContext('2d');
+            const F=parseFloat(document.getElementById('fric-F').value);
+            const ue=parseFloat(document.getElementById('fric-ue').value);
+            const uk=parseFloat(document.getElementById('fric-uk').value);
+            const mass=10, g=9.8, N=mass*g;
+            const feMax=ue*N, fk=uk*N;
+            // physics
+            if(!fricMoving){
+                if(F>feMax){fricMoving=true;fricVel=0;}
+            }
+            if(fricMoving){
+                const a=(F-fk)/mass;
+                fricVel+=a*0.016;
+                if(fricVel<0){fricVel=0;fricMoving=false;}
+                fricPos+=fricVel*0.5;
+                if(fricPos>350)fricPos=0;
+            } else { fricPos*=0.98; if(fricPos<0.5)fricPos=0; }
+
+            ctx.clearRect(0,0,500,220);
+            // ground
+            ctx.fillStyle='#d4a373';ctx.fillRect(0,150,500,70);
+            ctx.strokeStyle='#333';ctx.beginPath();ctx.moveTo(0,150);ctx.lineTo(500,150);ctx.stroke();
+            // block
+            const bx=50+fricPos;
+            ctx.fillStyle='#4a90d9';ctx.fillRect(bx,100,60,50);
+            ctx.strokeStyle='#333';ctx.strokeRect(bx,100,60,50);
+            ctx.fillStyle='#fff';ctx.font='12px Lora';ctx.fillText(mass+'kg',bx+10,130);
+            // F arrow
+            if(F>0){
+                ctx.beginPath();ctx.moveTo(bx+60,125);ctx.lineTo(bx+60+F*0.8,125);
+                ctx.strokeStyle='#00e676';ctx.lineWidth=3;ctx.stroke();
+                ctx.fillStyle='#00e676';ctx.fillText('F='+F.toFixed(0)+'N',bx+65+F*0.4,118);
+            }
+            // friction arrow
+            const fric=fricMoving?fk:Math.min(F,feMax);
+            if(fric>0){
+                ctx.beginPath();ctx.moveTo(bx,125);ctx.lineTo(bx-fric*0.8,125);
+                ctx.strokeStyle='#ff6d00';ctx.lineWidth=3;ctx.stroke();
+                ctx.fillStyle='#ff6d00';ctx.fillText('f='+ fric.toFixed(1)+'N',bx-fric*0.8-10,118);
+            }
+            // status
+            ctx.fillStyle='#333';ctx.font='13px Lora';
+            ctx.fillText(fricMoving?'Estado: EN MOVIMIENTO (cinética)':'Estado: ESTÁTICO',10,25);
+            ctx.fillText('fe,máx = '+feMax.toFixed(1)+' N',10,45);
+            ctx.fillText('fk = '+fk.toFixed(1)+' N',10,65);
+            // N arrow
+            ctx.beginPath();ctx.moveTo(bx+30,100);ctx.lineTo(bx+30,70);
+            ctx.strokeStyle='#7c4dff';ctx.lineWidth=2;ctx.stroke();
+            ctx.fillStyle='#7c4dff';ctx.fillText('N='+N.toFixed(0)+'N',bx+35,65);
+            // Weight
+            ctx.beginPath();ctx.moveTo(bx+30,150);ctx.lineTo(bx+30,180);
+            ctx.strokeStyle='#333';ctx.lineWidth=2;ctx.stroke();
+            ctx.fillText('mg',bx+35,180);
+            requestAnimationFrame(loopFric);
+        }
+
+
+        // === SIM 5: CIRCULAR PROJECTION (Interactive/Draggable) ===
+        let cpRun=true, cpT=0, cpDrag=false, cpManualAngle=null;
+        function cpToggle(){cpRun=!cpRun;}
+        function loopCP(){
+            const c=document.getElementById('simCircProj'); if(!c)return requestAnimationFrame(loopCP);
+            const ctx=c.getContext('2d');
+            const w=parseFloat(document.getElementById('cp-w').value)*0.01;
+            if(cpRun && !cpDrag) cpT+=w;
+            const cx=140, cy=140, R=100;
+            const angle = cpDrag && cpManualAngle!==null ? cpManualAngle : cpT;
+            const px=cx+R*Math.cos(angle), py=cy-R*Math.sin(angle);
+            ctx.clearRect(0,0,520,280);
+            // Circle
+            ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.strokeStyle='#1a6bff';ctx.lineWidth=2;ctx.stroke();
+            // Axes
+            ctx.setLineDash([3,3]);ctx.strokeStyle='#aaa';
+            ctx.beginPath();ctx.moveTo(cx-R-15,cy);ctx.lineTo(cx+R+15,cy);ctx.stroke();
+            ctx.beginPath();ctx.moveTo(cx,cy-R-15);ctx.lineTo(cx,cy+R+15);ctx.stroke();
+            ctx.setLineDash([]);
+            // Labels N,M,O
+            ctx.fillStyle='#333';ctx.font='14px Lora';
+            ctx.fillText('N',cx-5,cy-R-18);ctx.fillText('M',cx-5,cy+R+22);ctx.fillText('O',cx-15,cy+5);
+            // Arc from Q to P (red arc = traversed angle)
+            ctx.beginPath();ctx.arc(cx,cy,R,0,-angle,true);ctx.strokeStyle='rgba(255,0,0,0.5)';ctx.lineWidth=3;ctx.stroke();
+            // Radius to P
+            ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(px,py);ctx.strokeStyle='#0097a7';ctx.lineWidth=2;ctx.stroke();
+            // Dashed line from P to projection
+            ctx.fillStyle='#333';ctx.font='13px Lora';ctx.fillText('A',cx+(px-cx)/2-15, cy+(py-cy)/2);
+            // WALL / Projection axis
+            const wallX=350;
+            ctx.beginPath();ctx.moveTo(wallX,cy-R-30);ctx.lineTo(wallX,cy+R+30);ctx.strokeStyle='#333';ctx.lineWidth=2;ctx.stroke();
+            // Wall labels
+            ctx.fillText("N'",wallX+5,cy-R-10);ctx.fillText("M'",wallX+5,cy+R+18);ctx.fillText("O'",wallX+5,cy+5);
+            ctx.fillText("+A",wallX+20,cy-R+5);ctx.fillText("-A",wallX+20,cy+R+5);
+            // Projection line from P to wall
+            const projY=py;
+            ctx.setLineDash([5,5]);ctx.strokeStyle='#ffd600';
+            ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(wallX,projY);ctx.stroke();
+            ctx.setLineDash([]);
+            // Projection dot P'
+            ctx.beginPath();ctx.arc(wallX,projY,7,0,Math.PI*2);ctx.fillStyle='#7c4dff';ctx.fill();
+            ctx.fillStyle='#7c4dff';ctx.fillText("P'",wallX+10,projY+4);
+            // x vector on wall
+            if(Math.abs(projY-cy)>3){
+                ctx.beginPath();ctx.moveTo(wallX+35,cy);ctx.lineTo(wallX+35,projY);
+                ctx.strokeStyle='#ff6d00';ctx.lineWidth=2.5;ctx.stroke();
+                ctx.fillStyle='#ff6d00';ctx.fillText('x',wallX+40,(cy+projY)/2+4);
+            }
+            // Particle P (draggable)
+            ctx.beginPath();ctx.arc(px,py,9,0,Math.PI*2);ctx.fillStyle='#00e676';ctx.fill();ctx.strokeStyle='#333';ctx.stroke();
+            ctx.fillStyle='#333';ctx.fillText('P',px+12,py-5);
+            // Angle arc
+            if(Math.abs(angle)>0.05){
+                ctx.beginPath();ctx.arc(cx,cy,25,0,-angle,true);ctx.strokeStyle='#ff6d00';ctx.lineWidth=1.5;ctx.stroke();
+                ctx.fillStyle='#ff6d00';ctx.font='11px Lora';ctx.fillText('θ',cx+28*Math.cos(-angle/2),cy-28*Math.sin(angle/2));
+            }
+            // Light source effect
+            ctx.fillStyle='rgba(255,220,50,0.08)';ctx.beginPath();ctx.moveTo(20,cy);ctx.lineTo(px-5,py-30);ctx.lineTo(px-5,py+30);ctx.fill();
+            requestAnimationFrame(loopCP);
+        }
+        // Mouse drag for circular projection
+        (function(){
+            const c=document.getElementById('simCircProj'); if(!c)return;
+            const cx=140,cy=140,R=100;
+            function getAngle(e){
+                const rect=c.getBoundingClientRect();
+                const scaleX=520/rect.width;
+                const mx=(e.clientX-rect.left)*scaleX-cx;
+                const my=cy-(e.clientY-rect.top)*(280/rect.height);
+                return Math.atan2(my,mx);
+            }
+            c.addEventListener('mousedown',e=>{const rect=c.getBoundingClientRect();const scaleX=520/rect.width;const scaleY=280/rect.height;const mx=(e.clientX-rect.left)*scaleX;const my=(e.clientY-rect.top)*scaleY;const angle=cpDrag?cpManualAngle:cpT;const px=cx+R*Math.cos(angle),py=cy-R*Math.sin(angle);if(Math.hypot(mx-px,my-py)<25){cpDrag=true;}});
+            c.addEventListener('mousemove',e=>{if(cpDrag){cpManualAngle=getAngle(e);cpT=cpManualAngle;}});
+            c.addEventListener('mouseup',()=>{cpDrag=false;});
+            c.addEventListener('mouseleave',()=>{cpDrag=false;});
+        })();
+
+        // === SIM 6: DERIVATION POSITION (Interactive/Draggable) ===
+        let dpRun=true, dpT=0, dpDrag=false, dpManualAngle=null;
+        function dpToggle(){dpRun=!dpRun;}
+        function loopDP(){
+            const c=document.getElementById('simDerivPos'); if(!c)return requestAnimationFrame(loopDP);
+            const ctx=c.getContext('2d');
+            const alpha=parseFloat(document.getElementById('dp-alpha').value);
+            if(dpRun && !dpDrag) dpT+=0.02;
+            const cx=140, cy=140, R=100;
+            const angle = dpDrag && dpManualAngle!==null ? dpManualAngle : dpT+alpha;
+            const px=cx+R*Math.cos(angle), py=cy-R*Math.sin(angle);
+            ctx.clearRect(0,0,520,280);
+            // Circle
+            ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.strokeStyle='#1a6bff';ctx.lineWidth=2;ctx.stroke();
+            // Axes
+            ctx.setLineDash([3,3]);ctx.strokeStyle='#aaa';
+            ctx.beginPath();ctx.moveTo(cx-R-15,cy);ctx.lineTo(cx+R+15,cy);ctx.stroke();
+            ctx.beginPath();ctx.moveTo(cx,cy-R-15);ctx.lineTo(cx,cy+R+15);ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle='#333';ctx.font='13px Lora';
+            ctx.fillText('N',cx-5,cy-R-18);ctx.fillText('M',cx-5,cy+R+22);ctx.fillText('O',cx-15,cy+5);
+            // Initial angle α (cyan arc)
+            ctx.beginPath();ctx.arc(cx,cy,35,0,-alpha,true);ctx.strokeStyle='#0097a7';ctx.lineWidth=2;ctx.stroke();
+            ctx.fillStyle='#0097a7';ctx.fillText('α',cx+38*Math.cos(-alpha/2),cy-38*Math.sin(alpha/2));
+            // Q point (initial)
+            const qx=cx+R,qy=cy;
+            ctx.beginPath();ctx.arc(qx,qy,5,0,Math.PI*2);ctx.fillStyle='#ff6d00';ctx.fill();
+            ctx.fillText('Q',qx+8,qy+15);
+            // ωt arc (red)
+            ctx.beginPath();ctx.arc(cx,cy,R,0,-angle,true);ctx.strokeStyle='rgba(255,0,0,0.4)';ctx.lineWidth=3;ctx.stroke();
+            // Angle arc ωt
+            ctx.beginPath();ctx.arc(cx,cy,50,-alpha,-angle,true);ctx.strokeStyle='#ff0000';ctx.lineWidth=1.5;ctx.stroke();
+            ctx.fillStyle='#ff0000';ctx.font='11px Lora';ctx.fillText('ωt',cx+55*Math.cos(-(alpha+angle)/2),cy-55*Math.sin((alpha+angle)/2));
+            // Radius O->P
+            ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(px,py);ctx.strokeStyle='#0097a7';ctx.lineWidth=2;ctx.stroke();
+            ctx.fillStyle='#333';ctx.font='12px Lora';ctx.fillText('A',(cx+px)/2-15,(cy+py)/2);
+            // Dashed line from P to x-axis (cateto opuesto)
+            ctx.setLineDash([4,4]);ctx.strokeStyle='#ff6d00';
+            ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px,cy);ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle='#ff6d00';ctx.fillText('x',px+5,(cy+py)/2);
+            // Dashed horizontal from O to foot
+            ctx.setLineDash([3,3]);ctx.strokeStyle='#aaa';
+            ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(px,cy);ctx.stroke();
+            ctx.setLineDash([]);
+            // Wall
+            const wallX=380;
+            ctx.beginPath();ctx.moveTo(wallX,cy-R-25);ctx.lineTo(wallX,cy+R+25);ctx.strokeStyle='#333';ctx.lineWidth=2;ctx.stroke();
+            ctx.fillText("N'",wallX+5,cy-R-8);ctx.fillText("M'",wallX+5,cy+R+18);ctx.fillText("O'",wallX+5,cy+5);
+            ctx.fillText("+A",wallX+18,cy-R+5);ctx.fillText("-A",wallX+18,cy+R+5);
+            // Projection
+            const projY=py;
+            ctx.setLineDash([5,5]);ctx.strokeStyle='#ffd600';
+            ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(wallX,projY);ctx.stroke();ctx.setLineDash([]);
+            ctx.beginPath();ctx.arc(wallX,projY,6,0,Math.PI*2);ctx.fillStyle='#7c4dff';ctx.fill();
+            ctx.fillText("P'",wallX+10,projY+4);
+            // x on wall
+            if(Math.abs(projY-cy)>3){
+                ctx.beginPath();ctx.moveTo(wallX+30,cy);ctx.lineTo(wallX+30,projY);ctx.strokeStyle='#ff6d00';ctx.lineWidth=2;ctx.stroke();
+                ctx.fillStyle='#ff6d00';ctx.fillText('x',wallX+35,(cy+projY)/2+4);
+            }
+            // P dot
+            ctx.beginPath();ctx.arc(px,py,8,0,Math.PI*2);ctx.fillStyle='#00e676';ctx.fill();ctx.strokeStyle='#333';ctx.stroke();
+            ctx.fillStyle='#333';ctx.fillText('P',px+12,py-8);
+            // Formula display
+            ctx.fillStyle='#1a6bff';ctx.font='13px Lora';
+            const xVal=(R*Math.sin(angle)).toFixed(1);
+            ctx.fillText('x = A·sen(θ) = '+xVal+' px',10,270);
+            ctx.fillText('θ = '+(angle*180/Math.PI).toFixed(1)+'°',250,270);
+            requestAnimationFrame(loopDP);
+        }
+        // Mouse drag for derivation position
+        (function(){
+            const c=document.getElementById('simDerivPos'); if(!c)return;
+            const cx=140,cy=140,R=100;
+            c.addEventListener('mousedown',e=>{const rect=c.getBoundingClientRect();const sx=520/rect.width,sy=280/rect.height;const mx=(e.clientX-rect.left)*sx,my=(e.clientY-rect.top)*sy;const a=dpDrag?dpManualAngle:(dpT+parseFloat(document.getElementById('dp-alpha').value));const ppx=cx+R*Math.cos(a),ppy=cy-R*Math.sin(a);if(Math.hypot(mx-ppx,my-ppy)<25)dpDrag=true;});
+            c.addEventListener('mousemove',e=>{if(dpDrag){const rect=c.getBoundingClientRect();const sx=520/rect.width;const mx=(e.clientX-rect.left)*sx-cx;const my=cy-(e.clientY-rect.top)*(280/rect.height);dpManualAngle=Math.atan2(my,mx);dpT=dpManualAngle-parseFloat(document.getElementById('dp-alpha').value);}});
+            c.addEventListener('mouseup',()=>{dpDrag=false;});
+            c.addEventListener('mouseleave',()=>{dpDrag=false;});
+        })();
+
+        // === SIM 7: VELOCITY VECTOR (Interactive/Draggable) ===
+        let vvRun=true, vvT=0, vvDrag=false, vvManualAngle=null;
+        function vvToggle(){vvRun=!vvRun;}
+        function loopVV(){
+            const c=document.getElementById('simVelVec'); if(!c)return requestAnimationFrame(loopVV);
+            const ctx=c.getContext('2d');
+            const w=parseFloat(document.getElementById('vv-w').value)*0.01;
+            if(vvRun && !vvDrag) vvT+=w;
+            const cx=150, cy=150, R=100;
+            const angle = vvDrag && vvManualAngle!==null ? vvManualAngle : vvT;
+            const px=cx+R*Math.cos(angle), py=cy-R*Math.sin(angle);
+            ctx.clearRect(0,0,520,280);
+            // Circle
+            ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.strokeStyle='#1a6bff';ctx.lineWidth=2;ctx.stroke();
+            // Axes
+            ctx.setLineDash([3,3]);ctx.strokeStyle='#aaa';
+            ctx.beginPath();ctx.moveTo(cx-R-15,cy);ctx.lineTo(cx+R+15,cy);ctx.stroke();
+            ctx.beginPath();ctx.moveTo(cx,cy-R-15);ctx.lineTo(cx,cy+R+15);ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle='#333';ctx.font='13px Lora';ctx.fillText('O',cx-15,cy+15);
+            // Radius
+            ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(px,py);ctx.strokeStyle='#0097a7';ctx.lineWidth=1.5;ctx.stroke();
+            ctx.fillText('A',(cx+px)/2-12,(cy+py)/2);
+            // Angle arc
+            ctx.beginPath();ctx.arc(cx,cy,25,0,-angle,true);ctx.strokeStyle='#ff6d00';ctx.lineWidth=1.5;ctx.stroke();
+            ctx.fillStyle='#ff6d00';ctx.fillText('θ',cx+30,cy-8);
+            // Tangent velocity vector v (perpendicular to radius, pointing in direction of motion)
+            const vLen=70;
+            const vx=-Math.sin(angle)*vLen, vy=-Math.cos(angle)*vLen;
+            ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+vx,py+vy);
+            ctx.strokeStyle='#00e676';ctx.lineWidth=3;ctx.stroke();
+            // Arrow head for v
+            const aLen=8,aAng=0.4;
+            const vDir=Math.atan2(vy,vx);
+            ctx.beginPath();ctx.moveTo(px+vx,py+vy);
+            ctx.lineTo(px+vx-aLen*Math.cos(vDir-aAng),py+vy-aLen*Math.sin(vDir-aAng));
+            ctx.lineTo(px+vx-aLen*Math.cos(vDir+aAng),py+vy-aLen*Math.sin(vDir+aAng));
+            ctx.closePath();ctx.fillStyle='#00e676';ctx.fill();
+            ctx.fillStyle='#00e676';ctx.font='bold 14px Lora';ctx.fillText('v⃗',px+vx+5,py+vy-5);
+            // Wall
+            const wallX=400;
+            ctx.beginPath();ctx.moveTo(wallX,cy-R-25);ctx.lineTo(wallX,cy+R+25);ctx.strokeStyle='#333';ctx.lineWidth=2;ctx.stroke();
+            ctx.fillStyle='#333';ctx.font='13px Lora';ctx.fillText("O'",wallX+5,cy+5);
+            // Projection of P to wall
+            const projY=py;
+            ctx.setLineDash([5,5]);ctx.strokeStyle='#ffd600';
+            ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(wallX,projY);ctx.stroke();ctx.setLineDash([]);
+            ctx.beginPath();ctx.arc(wallX,projY,5,0,Math.PI*2);ctx.fillStyle='#7c4dff';ctx.fill();
+            ctx.fillText("P'",wallX+8,projY-8);
+            // vx component on wall (vertical projection of velocity)
+            const vxComp=vy; // vertical component of tangent velocity
+            if(Math.abs(vxComp)>2){
+                ctx.beginPath();ctx.moveTo(wallX+20,projY);ctx.lineTo(wallX+20,projY+vxComp);
+                ctx.strokeStyle='#1a6bff';ctx.lineWidth=3;ctx.stroke();
+                // Arrow head
+                const vxDir=vxComp>0?Math.PI/2:-Math.PI/2;
+                ctx.beginPath();ctx.moveTo(wallX+20,projY+vxComp);
+                ctx.lineTo(wallX+20-6,projY+vxComp-(vxComp>0?8:-8));
+                ctx.lineTo(wallX+20+6,projY+vxComp-(vxComp>0?8:-8));
+                ctx.closePath();ctx.fillStyle='#1a6bff';ctx.fill();
+                ctx.fillStyle='#1a6bff';ctx.fillText('v⃗ₓ',wallX+28,projY+vxComp/2+4);
+            }
+            // Dashed line: projection of v endpoint to wall
+            ctx.setLineDash([3,3]);ctx.strokeStyle='rgba(0,230,118,0.4)';
+            ctx.beginPath();ctx.moveTo(px,py+vy);ctx.lineTo(wallX,projY+vxComp);ctx.stroke();ctx.setLineDash([]);
+            // s arc on wall
+            ctx.beginPath();ctx.moveTo(wallX,cy);ctx.lineTo(wallX,projY);ctx.strokeStyle='#ff6d00';ctx.lineWidth=1.5;ctx.stroke();
+            ctx.fillStyle='#ff6d00';ctx.fillText('x',wallX-15,(cy+projY)/2);
+            // P dot
+            ctx.beginPath();ctx.arc(px,py,8,0,Math.PI*2);ctx.fillStyle='#00e676';ctx.fill();ctx.strokeStyle='#333';ctx.stroke();
+            ctx.fillStyle='#333';ctx.fillText('P',px+12,py-10);
+            // Info
+            ctx.fillStyle='#1a6bff';ctx.font='12px Lora';
+            ctx.fillText('v = ω·A',10,20);
+            ctx.fillText('vₓ = ω·A·cos(θ)',10,38);
+            requestAnimationFrame(loopVV);
+        }
+        // Mouse drag for velocity vector
+        (function(){
+            const c=document.getElementById('simVelVec'); if(!c)return;
+            const cx=150,cy=150,R=100;
+            c.addEventListener('mousedown',e=>{const rect=c.getBoundingClientRect();const sx=520/rect.width,sy=280/rect.height;const mx=(e.clientX-rect.left)*sx,my=(e.clientY-rect.top)*sy;const a=vvDrag?vvManualAngle:vvT;const ppx=cx+R*Math.cos(a),ppy=cy-R*Math.sin(a);if(Math.hypot(mx-ppx,my-ppy)<25)vvDrag=true;});
+            c.addEventListener('mousemove',e=>{if(vvDrag){const rect=c.getBoundingClientRect();const sx=520/rect.width;const mx=(e.clientX-rect.left)*sx-cx;const my=cy-(e.clientY-rect.top)*(280/rect.height);vvManualAngle=Math.atan2(my,mx);vvT=vvManualAngle;}});
+            c.addEventListener('mouseup',()=>{vvDrag=false;});
+            c.addEventListener('mouseleave',()=>{vvDrag=false;});
+        })();
+
+
+        // === SIM 8: ACCELERATION VECTOR (Interactive/Draggable) ===
+        let avRun=true, avT=0, avDrag=false, avManualAngle=null;
+        function avToggle(){avRun=!avRun;}
+        function loopAV(){
+            const c=document.getElementById('simAccVec'); if(!c)return requestAnimationFrame(loopAV);
+            const ctx=c.getContext('2d');
+            const w=parseFloat(document.getElementById('av-w').value)*0.01;
+            if(avRun && !avDrag) avT+=w;
+            const cx=150, cy=120, R=90;
+            const angle = avDrag && avManualAngle!==null ? avManualAngle : avT;
+            const px=cx+R*Math.cos(angle), py=cy-R*Math.sin(angle);
+            ctx.clearRect(0,0,520,240);
+            // Circle
+            ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.strokeStyle='#1a6bff';ctx.lineWidth=2;ctx.stroke();
+            // Axes
+            ctx.setLineDash([3,3]);ctx.strokeStyle='#aaa';
+            ctx.beginPath();ctx.moveTo(cx-R-15,cy);ctx.lineTo(cx+R+15,cy);ctx.stroke();
+            ctx.beginPath();ctx.moveTo(cx,cy-R-15);ctx.lineTo(cx,cy+R+15);ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle='#333';ctx.font='13px Lora';ctx.fillText('O',cx-15,cy+15);
+            // Radius
+            ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(px,py);ctx.strokeStyle='#0097a7';ctx.lineWidth=1.5;ctx.stroke();
+            
+            // Acceleration vector a_c pointing from P to O
+            const ax_c = cx-px, ay_c = cy-py;
+            // scale a bit for drawing
+            const drawLen = 60;
+            const uax = ax_c/R, uay = ay_c/R; 
+            ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+uax*drawLen, py+uay*drawLen);
+            ctx.strokeStyle='#ff6d00';ctx.lineWidth=3;ctx.stroke();
+            // arrowhead
+            const aAng=0.4, aLen=8, vDir=Math.atan2(uay,uax);
+            ctx.beginPath();ctx.moveTo(px+uax*drawLen,py+uay*drawLen);
+            ctx.lineTo(px+uax*drawLen-aLen*Math.cos(vDir-aAng),py+uay*drawLen-aLen*Math.sin(vDir-aAng));
+            ctx.lineTo(px+uax*drawLen-aLen*Math.cos(vDir+aAng),py+uay*drawLen-aLen*Math.sin(vDir+aAng));
+            ctx.closePath();ctx.fillStyle='#ff6d00';ctx.fill();
+            ctx.fillStyle='#ff6d00';ctx.font='bold 14px Lora';ctx.fillText('a⃗c',px+uax*drawLen-15,py+uay*drawLen-10);
+
+            // Wall
+            const wallX=380;
+            ctx.beginPath();ctx.moveTo(wallX,cy-R-25);ctx.lineTo(wallX,cy+R+25);ctx.strokeStyle='#333';ctx.lineWidth=2;ctx.stroke();
+            ctx.fillStyle='#333';ctx.font='13px Lora';ctx.fillText("O'",wallX+5,cy+5);
+            
+            // Projection P'
+            ctx.setLineDash([5,5]);ctx.strokeStyle='#ffd600';
+            ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(wallX,py);ctx.stroke();ctx.setLineDash([]);
+            ctx.beginPath();ctx.arc(wallX,py,5,0,Math.PI*2);ctx.fillStyle='#7c4dff';ctx.fill();
+            ctx.fillText("P'",wallX+8,py-8);
+
+            // ax component on wall (points towards O')
+            // vertical component of a_c is ay_c (goes towards cy)
+            const axComp = uay*drawLen;
+            if(Math.abs(axComp)>2){
+                ctx.beginPath();ctx.moveTo(wallX+20,py);ctx.lineTo(wallX+20,py+axComp);
+                ctx.strokeStyle='#1a6bff';ctx.lineWidth=3;ctx.stroke();
+                const vxDir = axComp>0 ? Math.PI/2 : -Math.PI/2;
+                ctx.beginPath();ctx.moveTo(wallX+20,py+axComp);
+                ctx.lineTo(wallX+20-6,py+axComp-(axComp>0?8:-8));
+                ctx.lineTo(wallX+20+6,py+axComp-(axComp>0?8:-8));
+                ctx.closePath();ctx.fillStyle='#1a6bff';ctx.fill();
+                ctx.fillStyle='#1a6bff';ctx.fillText('a⃗ₓ',wallX+28,py+axComp/2+4);
+            }
+            // P dot
+            ctx.beginPath();ctx.arc(px,py,8,0,Math.PI*2);ctx.fillStyle='#00e676';ctx.fill();ctx.strokeStyle='#333';ctx.stroke();
+            ctx.fillStyle='#333';ctx.fillText('P',px+12,py-10);
+
+            // Texts
+            ctx.fillStyle='#1a6bff';ctx.font='12px Lora';
+            ctx.fillText('Aceleración siempre apunta al centro',10,18);
+            ctx.fillText('aₓ = -ω²·x',10,35);
+
+            requestAnimationFrame(loopAV);
+        }
+        (function(){
+            const c=document.getElementById('simAccVec'); if(!c)return;
+            const cx=150,cy=120,R=90;
+            c.addEventListener('mousedown',e=>{const rect=c.getBoundingClientRect();const sx=520/rect.width,sy=240/rect.height;const mx=(e.clientX-rect.left)*sx,my=(e.clientY-rect.top)*sy;const a=avDrag?avManualAngle:avT;const ppx=cx+R*Math.cos(a),ppy=cy-R*Math.sin(a);if(Math.hypot(mx-ppx,my-ppy)<25)avDrag=true;});
+            c.addEventListener('mousemove',e=>{if(avDrag){const rect=c.getBoundingClientRect();const sx=520/rect.width;const mx=(e.clientX-rect.left)*sx-cx;const my=cy-(e.clientY-rect.top)*(240/rect.height);avManualAngle=Math.atan2(my,mx);avT=avManualAngle;}});
+            c.addEventListener('mouseup',()=>{avDrag=false;});
+            c.addEventListener('mouseleave',()=>{avDrag=false;});
+        })();
+
+        // === SIM 9: VELOCITY VS POSITION ===
+        function loopVelPos(){
+            const c=document.getElementById('simVelPos'); if(!c)return requestAnimationFrame(loopVelPos);
+            const ctx=c.getContext('2d');
+            const time = Date.now()*0.002;
+            const A=150;
+            const x = A*Math.sin(time);
+            ctx.clearRect(0,0,520,150);
+            
+            // Ground and limits
+            ctx.beginPath();ctx.moveTo(30,80);ctx.lineTo(490,80);ctx.strokeStyle='#aaa';ctx.stroke();
+            // Limits -A, A
+            ctx.beginPath();ctx.moveTo(260-A,70);ctx.lineTo(260-A,90);ctx.stroke();
+            ctx.beginPath();ctx.moveTo(260+A,70);ctx.lineTo(260+A,90);ctx.stroke();
+            ctx.beginPath();ctx.moveTo(260,70);ctx.lineTo(260,90);ctx.stroke();
+            ctx.fillStyle='#333';ctx.font='13px Lora';
+            ctx.fillText('-A',260-A-5,105); ctx.fillText('+A',260+A-5,105); ctx.fillText('O (x=0)',245,105);
+            
+            // Particle
+            const px = 260+x;
+            ctx.beginPath();ctx.arc(px,80,12,0,Math.PI*2);ctx.fillStyle='#00e676';ctx.fill();ctx.strokeStyle='#333';ctx.stroke();
+            
+            // Vector velocity
+            const v = A*Math.cos(time);
+            if(Math.abs(v)>1){
+                ctx.beginPath();ctx.moveTo(px,80);ctx.lineTo(px+v*0.6,80);
+                ctx.strokeStyle='#1a6bff';ctx.lineWidth=3;ctx.stroke();
+                const vdir = v>0?1:-1;
+                ctx.beginPath();ctx.moveTo(px+v*0.6,80);
+                ctx.lineTo(px+v*0.6-8*vdir, 80-6).lineTo(px+v*0.6-8*vdir, 80+6);
+                ctx.closePath();ctx.fillStyle='#1a6bff';ctx.fill();
+            }
+            
+            // Vector Accel
+            const acc = -x;
+            if(Math.abs(acc)>1){
+                ctx.beginPath();ctx.moveTo(px,120);ctx.lineTo(px+acc*0.4,120);
+                ctx.strokeStyle='#ff6d00';ctx.lineWidth=3;ctx.stroke();
+                const adir = acc>0?1:-1;
+                ctx.beginPath();ctx.moveTo(px+acc*0.4,120);
+                ctx.lineTo(px+acc*0.4-8*adir, 120-6).lineTo(px+acc*0.4-8*adir, 120+6);
+                ctx.closePath();ctx.fillStyle='#ff6d00';ctx.fill();
+            }
+            ctx.fillStyle='#1a6bff';ctx.fillText('v',40,84);
+            ctx.fillStyle='#ff6d00';ctx.fillText('a',40,124);
+
+            // Display text magnitudes
+            ctx.fillStyle='#333';ctx.font='14px Lora';
+            const vperc = Math.abs(v/A)*100;
+            const aperc = Math.abs(x/A)*100;
+            ctx.fillText('Velocidad: '+(vperc<5?'CERO (0%)':vperc.toFixed(0)+'% de Vmáx'), 15,20);
+            ctx.fillText('Aceleración: '+(aperc<5?'CERO (0%)':aperc.toFixed(0)+'% de Amáx'), 15,40);
+            
+            requestAnimationFrame(loopVelPos);
+        }
+
+        // === INIT ===
+        document.addEventListener("DOMContentLoaded",()=>{
+            updateBook();
+            requestAnimationFrame(loopPend);
+            requestAnimationFrame(loopSpring);
+            requestAnimationFrame(loopElong);
+            requestAnimationFrame(loopFric);
+            requestAnimationFrame(loopCP);
+            requestAnimationFrame(loopDP);
+            requestAnimationFrame(loopVV);
+            requestAnimationFrame(loopAV);
+            requestAnimationFrame(loopVelPos);
+        });
+    </script>
+</body>
+</html>
